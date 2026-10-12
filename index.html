@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude 교사 업무 자동화 1일차</title>
+<meta name="description" content="체험학습 사진으로 학부모 안내 페이지, 교과서 PDF를 차시별로, 1학기 계획서로 2학기 운영계획과 활동지. Claude 교사 업무 자동화 1일차 실습 따라 하기 안내입니다.">
+<meta property="og:title" content="Claude 교사 업무 자동화 1일차">
+<meta property="og:description" content="체험학습 사진·교과서·공문, 세 가지를 Claude에게 맡기는 실습 따라 하기">
+<meta property="og:image" content="img/d1-phone.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: claude-day1과 같은 한 줄 기둥(본문 46rem) 안내지. 교시마다 '결과 → 준비물 → 따라 하기 → Claude가 보여 준 것 → 고치기 → 확인' 순서. 부탁 문장은 노란 메모 카드. */
+:root {
+  --paper: #f5f6f2;
+  --surface: #ffffff;
+  --ink: #1c2622;
+  --muted: #5b6863;
+  --line: #dbe1dd;
+  --accent: #1d6b58;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2eee8;
+  --memo: #fff4c7;
+  --memo-line: #ecd98a;
+  --memo-ink: #3d3200;
+  --ask: #eef1f8;
+  --ask-ink: #26324d;
+  --story: #fbeee9;
+  --story-ink: #5a2a1d;
+  --good: #1f7a3d;
+  --bad: #b2402a;
+  --font-display: "Gowun Batang", "Nanum Myeongjo", serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111715; --surface: #18201d; --ink: #e6ece9; --muted: #9eb0a9; --line: #2a3531;
+    --accent: #72cdb1; --accent-ink: #0d1613; --accent-soft: #1b2f28;
+    --memo: #2b2713; --memo-line: #5a4f20; --memo-ink: #f2e3a3;
+    --ask: #1b2232; --ask-ink: #c9d4f0; --story: #2e1f1a; --story-ink: #f3c9bb;
+    --good: #7fd59a; --bad: #f08d77;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111715; --surface: #18201d; --ink: #e6ece9; --muted: #9eb0a9; --line: #2a3531;
+  --accent: #72cdb1; --accent-ink: #0d1613; --accent-soft: #1b2f28;
+  --memo: #2b2713; --memo-line: #5a4f20; --memo-ink: #f2e3a3;
+  --ask: #1b2232; --ask-ink: #c9d4f0; --story: #2e1f1a; --story-ink: #f3c9bb;
+  --good: #7fd59a; --bad: #f08d77;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 4.5rem; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent); text-underline-offset: 0.18em; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.3; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.wrap { max-width: 46rem; margin: 0 auto; padding-inline: 1.1rem; }
+
+/* ---------- 머리말 ---------- */
+.hero { padding-block: 3rem 2rem; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em;
+  color: var(--accent); text-transform: uppercase;
+}
+.hero h1 { font-size: clamp(1.9rem, 6vw, 2.75rem); margin-top: 0.6rem; }
+.hero .lead { margin-top: 1rem; color: var(--muted); max-width: 38rem; }
+.results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin-top: 2rem; }
+.result-card {
+  display: flex; flex-direction: column; gap: 0.5rem; text-decoration: none; color: inherit;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.6rem;
+}
+.result-card:hover { border-color: var(--accent); }
+.result-card .thumb { aspect-ratio: 4 / 5; overflow: hidden; border-radius: 6px; background: var(--accent-soft); }
+.result-card .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.result-card .when { font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent); letter-spacing: 0.04em; }
+.result-card strong { font-size: 0.95rem; line-height: 1.4; }
+@media (max-width: 560px) {
+  .results { grid-template-columns: 1fr; }
+  .result-card { flex-direction: row; align-items: center; }
+  .result-card .thumb { width: 5.5rem; flex: none; aspect-ratio: 1; }
+}
+
+/* ---------- 교시 이동 ---------- */
+.lesson-nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+}
+.lesson-nav .wrap { display: flex; gap: 0.4rem; padding-block: 0.55rem; overflow-x: auto; }
+.lesson-nav a {
+  flex: none; text-decoration: none; color: var(--muted); font-size: 0.9rem; font-weight: 600;
+  padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+}
+.lesson-nav a[aria-current="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* ---------- 섹션 공통 ---------- */
+section.block { padding-block: 2.6rem; border-bottom: 1px solid var(--line); }
+section.block:last-of-type { border-bottom: 0; }
+.block-head { display: grid; gap: 0.5rem; margin-bottom: 1.6rem; }
+.block-head h2 { font-size: clamp(1.55rem, 5vw, 2.05rem); }
+.block-head .summary { color: var(--muted); }
+h3 { font-size: 1.22rem; margin-top: 2.2rem; margin-bottom: 0.8rem; }
+.note { font-size: 0.92rem; color: var(--muted); }
+
+figure { margin: 0; }
+figure.shot { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.6rem; }
+figure.shot img { border-radius: 6px; margin-inline: auto; }
+figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.6rem; line-height: 1.6; }
+
+/* 준비물 */
+.kit { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.45rem; }
+.kit li { display: flex; gap: 0.6rem; align-items: baseline; }
+.kit li::before { content: "□"; color: var(--accent); font-weight: 700; flex: none; }
+
+/* 공통 순서 4단계 */
+.loop { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; counter-reset: loop; }
+.loop li { counter-increment: loop; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.8rem; font-size: 0.95rem; line-height: 1.5; }
+.loop li::before { content: counter(loop); display: block; font-family: var(--font-display); font-size: 1.6rem; color: var(--accent); line-height: 1; margin-bottom: 0.4rem; }
+.loop b { display: block; }
+@media (max-width: 640px) { .loop { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 따라 하기 단계 */
+ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: grid; gap: 1.4rem; }
+ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 2.3rem minmax(0, 1fr); gap: 0.8rem; }
+ol.steps > li::before {
+  content: counter(step); width: 2.3rem; height: 2.3rem; border-radius: 50%;
+  display: grid; place-items: center; background: var(--accent); color: var(--accent-ink);
+  font-weight: 700; font-family: var(--font-display); font-size: 1.1rem;
+}
+.step-body { display: grid; gap: 0.75rem; min-width: 0; }
+.step-body > p:first-child { font-weight: 600; }
+.ui { font-family: var(--font-mono); font-size: 0.86em; background: var(--accent-soft); border-radius: 4px; padding: 0.05em 0.35em; white-space: nowrap; }
+
+/* 부탁 문장 카드 */
+.prompt { background: var(--memo); border: 1px solid var(--memo-line); border-radius: var(--radius); color: var(--memo-ink); overflow: hidden; }
+.prompt-top { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.45rem 0.6rem 0.45rem 0.9rem; border-bottom: 1px dashed var(--memo-line); }
+.prompt-label { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.05em; }
+.prompt pre {
+  margin: 0; padding: 0.85rem 0.95rem 1rem; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere;
+  font-family: var(--font-body); font-size: 0.98rem; line-height: 1.7;
+}
+.copy {
+  font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--memo-ink); background: transparent; color: var(--memo-ink);
+  border-radius: 999px; padding: 0.2rem 0.75rem; min-height: 2rem;
+}
+.copy:hover { background: var(--memo-ink); color: var(--memo); }
+.copy.done { background: var(--memo-ink); color: var(--memo); }
+
+/* Claude가 보여 준 것 */
+.ask { background: var(--ask); color: var(--ask-ink); border-radius: var(--radius); padding: 0.9rem 1rem; display: grid; gap: 0.7rem; }
+.ask .who { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.05em; }
+.qa { display: grid; gap: 0.25rem; }
+.qa .q::before { content: "Claude  "; font-weight: 700; }
+.qa .a { padding-left: 1rem; }
+.qa .a::before { content: "답  "; font-weight: 700; }
+
+/* 실제로 있었던 일 */
+.story { background: var(--story); color: var(--story-ink); border-radius: var(--radius); padding: 0.9rem 1rem; display: grid; gap: 0.6rem; }
+.story .who { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.05em; }
+
+/* 표 */
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+table.plan { width: 100%; min-width: 34rem; border-collapse: collapse; font-size: 0.9rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
+table.plan td:nth-child(2) { min-width: 14rem; }
+table.plan th, table.plan td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.plan th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+table.plan td.n { white-space: nowrap; }
+table.plan tr.pair td { background: color-mix(in srgb, var(--memo) 55%, transparent); }
+details.more { margin-top: 0.4rem; }
+details.more summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+details.more .table-wrap { margin-top: 0.6rem; }
+
+/* 파일 목록 */
+.files { list-style: none; margin: 0; padding: 0.7rem 0.9rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 0.15rem; font-size: 0.9rem; }
+.files li::before { content: "📄 "; }
+
+/* 체크리스트 */
+.check { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.check label { display: flex; gap: 0.7rem; align-items: flex-start; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.65rem 0.8rem; }
+.check input { width: 1.2rem; height: 1.2rem; margin-top: 0.3rem; accent-color: var(--accent); flex: none; }
+.check input:checked + span { color: var(--muted); text-decoration: line-through; }
+.check-count { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+
+/* 하지 말 것 / 이렇게 */
+.dodont { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.dodont > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.9rem 1rem; }
+.dodont h4 { margin: 0 0 0.4rem; font-size: 0.95rem; }
+.dodont .dont h4 { color: var(--bad); }
+.dodont .do h4 { color: var(--good); }
+.dodont ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; font-size: 0.95rem; }
+@media (max-width: 640px) { .dodont { grid-template-columns: 1fr; } }
+
+/* 막힐 때 */
+.faq { display: grid; gap: 0.5rem; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.7rem 0.9rem; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.faq details p { margin-top: 0.5rem; color: var(--muted); }
+
+/* 내려받기 */
+.downloads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+.dl {
+  display: flex; flex-direction: column; gap: 0.15rem; text-decoration: none;
+  border: 1px solid var(--accent); border-radius: var(--radius); padding: 0.75rem 0.9rem; color: var(--ink); background: var(--surface);
+}
+.dl.main { background: var(--accent); color: var(--accent-ink); }
+.dl b { font-size: 1rem; }
+.dl span { font-size: 0.85rem; opacity: 0.85; }
+.dl:hover { box-shadow: 0 0 0 2px var(--accent); }
+@media (max-width: 560px) { .downloads { grid-template-columns: 1fr; } }
+
+.result-line { font-variant-numeric: tabular-nums; }
+footer { padding-block: 2.5rem 3.5rem; color: var(--muted); font-size: 0.9rem; }
+footer ul { padding-left: 1.1rem; display: grid; gap: 0.25rem; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Claude로 교사 업무 자동화 · 1일차</p>
+    <h1>체험학습 사진, 교과서, 공문. 세 가지를 Claude에게 맡겨 봐요</h1>
+    <p class="lead">강의에서 함께 한 실습 세 가지를 그대로 따라 할 수 있게 정리했습니다. 노란 메모의 부탁 문장은 <b>복사</b>를 눌러 Claude Code에 그대로 붙여 넣으시면 됩니다. 실습에 쓴 사진·교과서·계획서와 완성 예시도 내려받을 수 있습니다.</p>
+    <div class="results">
+      <a class="result-card" href="#lesson1">
+        <div class="thumb"><img src="img/d1-card.jpg" alt="휴대폰에서 연 학부모 안내 페이지. 제목, 날짜, 장소와 첫 사진 묶음이 보인다" loading="eager"></div>
+        <div><span class="when">1교시</span><br><strong>체험학습 사진으로 학부모 안내 페이지</strong></div>
+      </a>
+      <a class="result-card" href="#lesson2">
+        <div class="thumb"><img src="img/d2-card.jpg" alt="차시별로 나눈 교과서 PDF의 첫 쪽. 신석기 시대 사람들의 생활 모습을 알아볼까요" loading="eager"></div>
+        <div><span class="when">2교시</span><br><strong>교과서 PDF를 차시별로 나누기</strong></div>
+      </a>
+      <a class="result-card" href="#lesson3">
+        <div class="thumb"><img src="img/d3-card.jpg" alt="2학기 인성교육실천주간 학생 활동지 PDF 첫 쪽" loading="eager"></div>
+        <div><span class="when">3교시</span><br><strong>1학기 계획서로 2학기 운영계획·활동지</strong></div>
+      </a>
+    </div>
+  </div>
+</header>
+
+<nav class="lesson-nav" aria-label="교시 이동">
+  <div class="wrap">
+    <a href="#start">시작 전에</a>
+    <a href="#lesson1">1교시 사진</a>
+    <a href="#lesson2">2교시 교과서</a>
+    <a href="#lesson3">3교시 공문</a>
+  </div>
+</nav>
+
+<main>
+<!-- ============================== 시작 전에 ============================== -->
+<section class="block" id="start">
+  <div class="wrap">
+    <div class="block-head">
+      <p class="eyebrow">시작 전에 한 번만</p>
+      <h2>준비할 것 두 가지</h2>
+    </div>
+    <ul class="kit">
+      <li><span><b>Claude 유료 계정</b>으로 로그인해 주세요. Claude Code는 Pro·Max·Team·Enterprise 요금제에서 쓸 수 있습니다. Pro는 미국 기준 월 20달러입니다.</span></li>
+      <li><span><b>Claude 데스크톱 앱</b>(Windows·macOS)을 설치해 주세요. 세 실습 모두 앱 위쪽 가운데의 <span class="ui">Code</span> 탭에서 합니다.</span></li>
+    </ul>
+
+    <h3>Code 탭에서 실습 폴더 열기</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>데스크톱 앱 위쪽의 <span class="ui">Code</span> 탭을 누르고, 왼쪽에서 <span class="ui">+ New session</span>을 눌러 주세요.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>입력창 아래에서 환경은 <span class="ui">Local</span>, 폴더는 <span class="ui">Select folder</span>로 이번 교시의 실습 폴더 하나를 골라 주세요.</p>
+        <p class="note">자료가 잔뜩 든 상위 폴더 말고, 그 교시에 쓸 폴더 하나만 고릅니다. Claude는 고른 폴더 안의 파일을 직접 읽고 씁니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>권한 모드는 <span class="ui">Manual</span>로 두기를 권합니다.</p>
+        <p class="note">Claude가 파일을 만들거나 옮기기 전에 무엇을 하려는지 보여 주고 허락을 묻습니다. 내용을 읽고 <span class="ui">Accept</span>를 누르면 진행합니다. 처음에는 귀찮아도 무엇을 하는지 보는 것이 공부입니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>부탁 문장을 붙여 넣고 <span class="ui">Enter</span>를 눌러 주세요.</p>
+      </div></li>
+    </ol>
+    <p class="note" style="margin-top:0.8rem">메뉴 이름은 앱 버전과 화면 언어에 따라 조금 다를 수 있습니다.</p>
+
+    <h3>세 실습 모두 이 순서로 맡깁니다</h3>
+    <ol class="loop">
+      <li><b>기준을 말한다</b>무엇을, 어떻게 해 달라는지 번호를 붙여 적어요</li>
+      <li><b>계획을 보고 허락한다</b>"계획부터 보여 줘"로 먼저 확인해요</li>
+      <li><b>결과를 직접 확인한다</b>날짜·쪽수·사진은 내 눈으로 한 번 더</li>
+      <li><b>말로 고친다</b>마음에 안 드는 곳을 그대로 말해요</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================== 1교시 ============================== -->
+<section class="block" id="lesson1">
+  <div class="wrap">
+    <div class="block-head">
+      <p class="eyebrow">1교시 · Claude Code</p>
+      <h2>체험학습 사진으로 학부모 안내 페이지 만들기</h2>
+      <p class="summary">정리 안 된 체험학습 사진 폴더와 계획서를 맡기면, 연속 사진마다 대표 한 장만 남기고 학생이 고르게 나오도록 골라 휴대폰에서 보는 안내 페이지 한 장을 만들어 줍니다.</p>
+    </div>
+
+    <figure class="shot">
+      <img src="img/d1-phone.jpg" alt="완성된 안내.html을 휴대폰 너비로 연 화면 두 개. 왼쪽은 제목과 인사말, 오른쪽은 푸른숲 생태체험원 사진 묶음" loading="lazy" width="1100" height="1133">
+      <figcaption>완성된 안내 페이지를 휴대폰에서 연 모습입니다. 사진 16장이 파일 안에 들어 있어 이 파일 하나만 보내면 됩니다(3.1MB). 사진을 누르면 크게 보입니다. <a href="examples/guide.html" target="_blank" rel="noopener">완성 예시 열어 보기</a></figcaption>
+    </figure>
+
+    <h3>준비물</h3>
+    <ul class="kit">
+      <li><span>실습 사진(아래에서 내려받기). 체험학습 하루치 60장과 운영계획 PDF가 들어 있습니다.</span></li>
+      <li><span>Claude 데스크톱 앱 Code 탭과 유료 계정</span></li>
+    </ul>
+
+    <h3>따라 하기</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>실습 사진을 내려받아 압축을 풀어 주세요.</p>
+        <p>'실습2_Cowork용_체험학습폴더'에 사진 60장과 <b>체험학습_운영계획.pdf</b>가 있습니다. '실습1_채팅용_사진15장'은 같은 사진 중 15장만 담은 가벼운 연습용입니다. 내 사진으로 하실 때는 원본 말고 <b>복사본 폴더</b>를 따로 만들어 주세요.</p>
+        <div class="downloads"><a class="dl main" href="files/day1-photos.zip" download="1교시_체험학습사진.zip"><b>실습 사진 받기</b><span>압축 파일 · 18MB · 사진 75장 + 계획서</span></a></div>
+      </div></li>
+      <li><div class="step-body">
+        <p>Code 탭에서 '실습2_Cowork용_체험학습폴더'를 골라 주세요.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>먼저 연속 사진에서 대표 사진만 골라 달라고 해 보세요.</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">부탁 문장 · 대표 사진 고르기</span><button class="copy" type="button">복사</button></div>
+<pre>체험학습을 다녀와서 사진을 많이 찍었어. 이 폴더의 사진을 분석해서 연속사진마다 대표사진을 하나씩 골라줘.</pre>
+        </div>
+        <p>실습에서는 Claude가 사진 이름의 촬영 시각으로 60장을 <b>20장면</b>(연속 17묶음 + 단독 3장)으로 나누고, 묶음마다 사진을 나란히 놓고 비교했습니다. 흐린 컷, 어두운 컷, 너무 확대돼 잘린 컷은 빼고, 웃는 얼굴이 크고 또렷한 컷을 남겼습니다. 사진마다 선명도와 밝기를 숫자로도 재서 판단을 확인했습니다.</p>
+        <figure class="shot">
+          <img src="img/d1-overview.jpg" alt="대표로 남긴 20장을 촬영 시각순으로 모은 그림. 버스 탑승부터 과학관 단체 사진까지" loading="lazy" width="1400" height="857">
+          <figcaption>Claude가 만든 대표 사진 모아보기입니다. 남지 않은 40장은 지우지 않고 '삭제예정' 폴더로 옮겼습니다.</figcaption>
+        </figure>
+      </div></li>
+      <li><div class="step-body">
+        <p>이제 안내 페이지를 부탁해 주세요. 조건에 번호를 붙여 적습니다.</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">부탁 문장 · 실습에서 쓴 문장</span><button class="copy" type="button">복사</button></div>
+<pre>이 폴더의 체험학습 사진과 계획서로 학부모 안내 페이지를 만들어 줘.
+1. 원본은 지우지 말고, 연속 사진 중 대표가 아닌 것은 '삭제예정' 폴더로 옮겨 줘.
+2. 계획서에서 학교·체험명·날짜·장소만 읽어 줘. 시간표는 페이지에 넣지 마.
+3. 학생 한 명에게 개인 사진이 몰리지 않게 골라 줘. 단체 사진은 괜찮아.
+4. 학생 이름·옷차림·특징은 쓰지 말고, 사진을 넣은 안내.html 한 파일로 만들어 줘.
+5. 시작하기 전에 계획부터 보여 줘.</pre>
+        </div>
+        <p class="note">3단계를 건너뛰고 이 문장부터 붙여 넣어도 됩니다. 1번 조건에 대표 사진 고르기가 들어 있습니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>Claude가 보여 주는 계획을 읽어 주세요.</p>
+        <p>실습에서는 대표 사진 20장을 다시 세어 보니 한 학생이 개인 사진 6장에 나왔습니다. Claude는 그 학생 사진을 2장으로 줄이고(친구와 함께 찍힌 사진은 남김) 16장으로 페이지를 짜겠다는 계획을 그림으로 보여 줬습니다.</p>
+        <figure class="shot">
+          <img src="img/d1-plan.jpg" alt="안내 페이지 사진 배치 계획. 출발, 생태체험원, 점심, 과학관 네 묶음과 넣지 않을 사진 4장" loading="lazy" width="1400" height="1056">
+          <figcaption>계획 단계에서 받은 사진 배치 미리보기입니다. 맨 아래 흐린 4장은 한 학생에게 몰려서 페이지에 넣지 않는 사진입니다. 폴더에서는 지우지 않습니다.</figcaption>
+        </figure>
+        <div class="ask">
+          <p class="who">실습에서 Claude가 함께 알려 준 것</p>
+          <div class="qa"><p class="q">계획서에서는 학교·체험명·날짜·장소 4가지만 씁니다. 그래서 기본 양식에 있던 '오늘의 미션'과 '안전 관리' 칸은 빼겠습니다.</p></div>
+          <div class="qa"><p class="q">사진 설명은 활동만 적습니다. 예: "커다란 나무를 꼭 안아 보며 나무의 숨결을 느껴요"</p></div>
+          <div class="qa"><p class="q">그 학생 사진을 1장 더 넣거나, 미션·안전 칸을 다시 넣을 수도 있습니다. 바꿀 부분이 있으면 말씀해 주세요.</p></div>
+        </div>
+      </div></li>
+      <li><div class="step-body">
+        <p>계획이 괜찮으면 허락해 주세요.</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">부탁 문장 · 허락하기</span><button class="copy" type="button">복사</button></div>
+<pre>응, 그대로 진행해</pre>
+        </div>
+      </div></li>
+      <li><div class="step-body">
+        <p>결과를 열어 확인해 주세요.</p>
+        <p class="result-line">실습 결과: 폴더에 대표 사진 20장이 남고 '삭제예정' 폴더에 40장이 옮겨졌습니다. <b>안내.html</b> 한 파일(3.1MB)에 사진 16장이 들어갔습니다. Claude는 페이지 글에 교사 이름·시각·인원·옷차림 단어가 없는지 검사하고, 휴대폰 크기 화면으로 직접 열어 확인한 뒤 넘겨 줬습니다.</p>
+      </div></li>
+    </ol>
+
+    <h3>마음에 안 들면 말로 고쳐요</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>활동 시각을 넣고 싶다면</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">고치는 말 · 실습에서 쓴 문장</span><button class="copy" type="button">복사</button></div>
+<pre>활동이 어떤 시간에 이루어졌는지 추가해</pre>
+        </div>
+        <p>Claude는 사진 파일 이름에 기록된 <b>실제 촬영 시각</b>을 사진마다 붙이고, 시각이 뒤섞여 보이지 않게 사진을 시간순으로 다시 놓았습니다. 그리고 "계획서 시간표의 예정 시각으로 바꿀 수도 있다"고 알려 줬습니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>계획서의 예정 시각으로 바꾸고 싶다면</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">고치는 말 · 실습에서 쓴 문장</span><button class="copy" type="button">복사</button></div>
+<pre>계획서 시간표 시각으로 바꿔줘</pre>
+        </div>
+        <p>사진 묶음이 시간표 블록(출발 08:50~09:00, 생태체험원 10:00~11:40, 점심, 과학관, 단체 사진)에 맞춰 다시 나뉘고, 묶음 제목 옆에 계획서 시각이 붙었습니다.</p>
+      </div></li>
+    </ol>
+
+    <h3>완성 확인</h3>
+    <ul class="check" data-check="l1">
+      <li><label><input type="checkbox" id="l1-1"><span>원본 사진 수가 그대로인가요? (남은 20장 + 삭제예정 40장 = 60장)</span></label></li>
+      <li><label><input type="checkbox" id="l1-2"><span>페이지에 학생 이름·옷차림·생김새를 묘사하는 말이 없나요?</span></label></li>
+      <li><label><input type="checkbox" id="l1-3"><span>한 학생의 개인 사진이 몰리지 않았나요? 같은 학생이 연달아 나오지 않나요?</span></label></li>
+      <li><label><input type="checkbox" id="l1-4"><span>휴대폰으로 안내.html을 열어도 잘 보이고, 사진을 누르면 크게 보이나요?</span></label></li>
+    </ul>
+    <p class="check-count" data-count="l1"></p>
+
+    <h3>안전하게 맡기기</h3>
+    <div class="dodont">
+      <div class="dont"><h4>하지 말 것</h4><ul>
+        <li>실습 자료가 다 든 상위 폴더를 통째로 고르기 (다른 파일까지 읽힙니다)</li>
+        <li>"필요 없는 사진은 지워 줘"라고 부탁하기</li>
+        <li>학생 실명이나 반·번호를 안내문에 넣어 달라고 하기</li>
+      </ul></div>
+      <div class="do"><h4>이렇게</h4><ul>
+        <li>이번에 쓸 폴더 하나만 고르기</li>
+        <li>지우기 대신 '삭제예정 폴더로 옮기기'</li>
+        <li>학부모 동의 범위 안에서 학교가 정한 공식 통로로만 공유하기</li>
+      </ul></div>
+    </div>
+
+    <h3>막힐 때</h3>
+    <div class="faq">
+      <details><summary>폴더를 고르는 버튼이 안 보여요</summary><p>유료 계정으로 로그인했는지, 웹이 아니라 데스크톱 앱의 Code 탭인지 확인해 주세요. 새 세션의 입력창 아래에 폴더 고르기가 있습니다.</p></details>
+      <details><summary>같은 학생 사진만 계속 나와요</summary><p>"한 학생의 개인 사진은 2장까지, 같은 학생이 연달아 나오지 않게"처럼 숫자로 기준을 말해 주세요.</p></details>
+      <details><summary>엉뚱한 사진을 대표로 골랐어요</summary><p>"흐린 사진, 어두운 사진, 얼굴이 잘린 사진은 빼고 웃는 얼굴이 또렷한 사진으로"처럼 기준을 더 구체적으로 말해 주세요.</p></details>
+      <details><summary>안내.html 용량이 너무 커요</summary><p>"카카오톡으로 보낼 수 있게 6MB 이하로 사진 크기를 줄여 줘"라고 부탁해 주세요.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 2교시 ============================== -->
+<section class="block" id="lesson2">
+  <div class="wrap">
+    <div class="block-head">
+      <p class="eyebrow">2교시 · Claude Code + 제미나이 노트북</p>
+      <h2>교과서 PDF를 차시별로 나누기</h2>
+      <p class="summary">교과서 PDF와 진도표 엑셀을 주면, 교과서에 인쇄된 쪽번호를 기준으로 차시마다 PDF 한 개씩 나눠 줍니다. 나눈 차시 PDF로 제미나이 노트북에서 인포그래픽도 만들어 봅니다.</p>
+    </div>
+
+    <figure class="shot">
+      <img src="img/d2-pages.jpg" alt="차시별로 나눈 PDF의 쪽. 03차시 교과서 15·16·17쪽과 04-05차시 첫 쪽 18쪽" loading="lazy" width="1600" height="558">
+      <figcaption>나눈 결과입니다. 03차시는 교과서 15~17쪽, 04-05차시는 18쪽(청동기 시대)부터 시작합니다. 두 쪽이 붙은 펼침면도 한 쪽씩 잘랐습니다. 예시 받기: <a href="examples/lesson03.pdf" download="03차시_신석기 시대 사람들의 생활 모습을 알아볼까요.pdf">03차시</a> · <a href="examples/lesson04-05.pdf" download="04-05차시_청동기 시대 사람들의 생활 모습을 알아볼까요.pdf">04-05차시</a> · <a href="examples/lesson11.pdf" download="11차시_통일신라의 발전과 사람들의 생활 모습을 알아볼까요.pdf">11차시</a></figcaption>
+    </figure>
+
+    <h3>준비물</h3>
+    <ul class="kit">
+      <li><span>실습 교과서 PDF와 진도표(아래에서 내려받기) 또는 우리 학교 교과서 PDF와 진도표</span></li>
+      <li><span>진도표에는 차시, 차시명(학습 내용), <b>교과서 쪽수</b> 열이 있어야 합니다. 나이스 업로드용 진도표면 그대로 됩니다.</span></li>
+      <li><span>인포그래픽까지 해 보시려면 제미나이 노트북(Gemini Notebook) 계정</span></li>
+    </ul>
+
+    <h3>따라 하기</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>실습 자료를 내려받아 압축을 풀어 주세요.</p>
+        <p>'실습_교과서폴더'에 5학년 2학기 사회 교과서 1단원 PDF(60쪽)와 2학기 진도표 엑셀이 들어 있습니다.</p>
+        <div class="downloads"><a class="dl main" href="files/day2-textbook.zip" download="2교시_교과서차시.zip"><b>교과서와 진도표 받기</b><span>압축 파일 · 72MB</span></a></div>
+      </div></li>
+      <li><div class="step-body">
+        <p>Code 탭에서 '실습_교과서폴더'를 고르고, 부탁 문장을 붙여 넣어 주세요.</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">부탁 문장 · 실습에서 쓴 문장</span><button class="copy" type="button">복사</button></div>
+<pre>이 폴더의 교과서 PDF를 진도표 엑셀에 맞춰 차시별 PDF로 나눠 줘.
+1. 자르기 전에 표부터 보여 줘: 차시 | 차시명 | 교과서 쪽 | PDF 쪽
+2. 교과서에 인쇄된 쪽번호와 PDF 쪽 번호가 다를 수 있으니, 인쇄된 쪽번호를 기준으로 맞춰 줘.
+3. 원본은 그대로 두고, 결과는 '차시별' 폴더에 '01차시_차시명.pdf'처럼 저장해 줘.</pre>
+        </div>
+      </div></li>
+      <li><div class="step-body">
+        <p>Claude가 보여 주는 표를 읽어 주세요.</p>
+        <div class="ask">
+          <p class="who">실습에서 Claude가 확인해 알려 준 것</p>
+          <div class="qa"><p class="q">교과서 PDF는 1단원만 담고 있습니다(PDF 60쪽 = 교과서 6~69쪽). 진도표는 2학기 전체 48차시라서, 1단원 20차시만 나눕니다.</p></div>
+          <div class="qa"><p class="q">지면에 인쇄된 쪽번호를 60쪽에서 읽어 맞춰 보니 98%가 일치합니다. PDF 1쪽이 교과서 6쪽입니다.</p></div>
+          <div class="qa"><p class="q">PDF 2·3·8·9쪽은 두 쪽이 한 화면에 붙은 펼침면이라 좌우로 잘라 교과서 1쪽 = PDF 1쪽으로 맞춥니다.</p></div>
+          <div class="qa"><p class="q">4·5차시처럼 같은 쪽을 2차시에 배우는 쌍이 5개 있습니다. 차시마다 하나씩 만들면 같은 내용 파일이 2개씩 생깁니다. 하나로 묶을 수도 있습니다.</p></div>
+        </div>
+        <div class="table-wrap">
+          <table class="plan">
+            <thead><tr><th>차시</th><th>차시명</th><th>교과서 쪽</th><th>PDF 쪽</th></tr></thead>
+            <tbody>
+              <tr><td class="n">01</td><td>단원 도입</td><td class="n">6~11</td><td class="n">1~4 (2·3은 펼침면)</td></tr>
+              <tr><td class="n">02</td><td>구석기 시대 사람들의 생활 모습을 알아볼까요</td><td class="n">12~14</td><td class="n">5~7</td></tr>
+              <tr><td class="n">03</td><td>신석기 시대 사람들의 생활 모습을 알아볼까요</td><td class="n">15~17</td><td class="n">8 (펼침면), 9 왼쪽</td></tr>
+              <tr class="pair"><td class="n">04·05</td><td>청동기 시대 사람들의 생활 모습을 알아볼까요</td><td class="n">18~23</td><td class="n">9 오른쪽, 10~14</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <details class="more"><summary>표 전체 보기 (20차시)</summary>
+          <div class="table-wrap">
+            <table class="plan">
+              <thead><tr><th>차시</th><th>차시명</th><th>교과서 쪽</th><th>PDF 쪽</th></tr></thead>
+              <tbody>
+                <tr><td class="n">06</td><td>고조선 사람들의 생활 모습을 알아볼까요 주제 마무리</td><td class="n">24~27</td><td class="n">15~18</td></tr>
+                <tr class="pair"><td class="n">07·08</td><td>삼국과 가야의 성립과 발전 과정을 알아볼까요</td><td class="n">28~33</td><td class="n">19~24</td></tr>
+                <tr class="pair"><td class="n">09·10</td><td>삼국과 가야 사람들의 생활 모습을 알아볼까요</td><td class="n">34~39</td><td class="n">25~30</td></tr>
+                <tr><td class="n">11</td><td>통일신라의 발전과 사람들의 생활 모습을 알아볼까요</td><td class="n">40~42</td><td class="n">31~33</td></tr>
+                <tr><td class="n">12</td><td>발해의 발전과 사람들의 생활 모습을 알아볼까요 주제 마무리</td><td class="n">43~45</td><td class="n">34~36</td></tr>
+                <tr><td class="n">13</td><td>고려의 건국 과정을 알아볼까요</td><td class="n">46~48</td><td class="n">37~39</td></tr>
+                <tr><td class="n">14</td><td>고려 사회의 모습을 알아볼까요</td><td class="n">49~52</td><td class="n">40~43</td></tr>
+                <tr class="pair"><td class="n">15·16</td><td>고려와 주변 나라들의 관계를 알아볼까요</td><td class="n">53~57</td><td class="n">44~48</td></tr>
+                <tr class="pair"><td class="n">17·18</td><td>고려의 문화와 사람들의 생활 모습을 알아볼까요 주제 마무리</td><td class="n">58~63</td><td class="n">49~54</td></tr>
+                <tr><td class="n">19</td><td>생각을 펼쳐요</td><td class="n">64~65</td><td class="n">55~56</td></tr>
+                <tr><td class="n">20</td><td>생각 그물을 완성해요 교실 놀이를 함께해요</td><td class="n">66~69</td><td class="n">57~60</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <p class="note">노란 줄은 같은 쪽을 2차시에 걸쳐 배우는 연차시입니다. 휴대폰에서는 표를 옆으로 밀면 쪽 번호가 보입니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>표가 맞으면 허락해 주세요.</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">부탁 문장 · 허락하기</span><button class="copy" type="button">복사</button></div>
+<pre>응, 20개로 그대로 진행해</pre>
+        </div>
+      </div></li>
+      <li><div class="step-body">
+        <p>'차시별' 폴더를 열어 확인해 주세요.</p>
+        <p class="result-line">실습 결과: 차시 PDF 20개가 생겼고, 파일마다 쪽수가 진도표의 쪽 범위와 정확히 같았습니다. Claude는 차시가 바뀌는 쪽과 펼침면을 자른 쪽을 화면에 띄워, 지면 아래 인쇄된 쪽번호와 차시 제목이 표와 같은지 직접 확인했습니다. 원본 PDF는 그대로입니다.</p>
+      </div></li>
+    </ol>
+
+    <h3>마음에 안 들면 말로 고쳐요</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>연차시를 한 파일로 묶고 싶다면</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">고치는 말 · 실습에서 쓴 문장</span><button class="copy" type="button">복사</button></div>
+<pre>연차시로 나누어진 차시는 따로 나누지 말고 하나로 묶어. 예를 들어 4차시와 5차시는 하나니깐 4-5차시 이렇게</pre>
+        </div>
+        <p>Claude는 쌍마다 두 파일이 완전히 같은지 먼저 비교한 뒤, 앞 파일 이름을 '04-05차시_…'로 바꾸고 중복 파일을 지웠습니다. 파일이 20개에서 15개가 됐습니다.</p>
+        <ul class="files">
+          <li>01차시_단원 도입.pdf</li>
+          <li>02차시_구석기 시대 사람들의 생활 모습을 알아볼까요.pdf</li>
+          <li>03차시_신석기 시대 사람들의 생활 모습을 알아볼까요.pdf</li>
+          <li><b>04-05차시</b>_청동기 시대 사람들의 생활 모습을 알아볼까요.pdf</li>
+          <li>06차시_고조선 사람들의 생활 모습을 알아볼까요 주제 마무리.pdf</li>
+          <li><b>07-08차시</b>_삼국과 가야의 성립과 발전 과정을 알아볼까요.pdf</li>
+          <li>… (모두 15개)</li>
+        </ul>
+      </div></li>
+    </ol>
+
+    <h3>이어서 · 제미나이 노트북으로 인포그래픽</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>제미나이 노트북에 차시 PDF 한 개를 소스로 올리고, 스튜디오의 '인포그래픽'에서 맞춤설정을 열어 주세요.</p>
+        <p>실습에서는 03차시 PDF를 올리고 한국어, 가로, 시각적 스타일 자동, 세부정보 '간결하게'로 두었습니다.</p>
+        <figure class="shot">
+          <img src="img/d2-gemini-settings.jpg" alt="제미나이 노트북 인포그래픽 맞춤설정 창. 언어 한국어, 방향 가로, 스타일 자동 선택, 세부정보 간결하게, 소스 1개" loading="lazy" width="1400" height="670">
+          <figcaption>인포그래픽 맞춤설정 화면입니다. 설명 칸에 아래 문장을 적었습니다.</figcaption>
+        </figure>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">설명 칸 · 실습에서 쓴 문장</span><button class="copy" type="button">복사</button></div>
+<pre>초등학교 5학년 사회 수업용 인포그래픽을 만들어줘
+-이 차시 교과서에 나온 핵심 개념 3가지만
+-교과서에 쓰인 용어를 그대로, 교과서에 없는 내용은 넣지 않기
+-글은 짧게 한국어로</pre>
+        </div>
+      </div></li>
+      <li><div class="step-body">
+        <p>결과를 교과서와 대조해 주세요.</p>
+        <figure class="shot">
+          <img src="img/d2-gemini-result.jpg" alt="한눈에 보는 신석기 시대 사람들의 생활 모습 인포그래픽. 식생활, 주생활, 의생활 세 칸" loading="lazy" width="1400" height="622">
+          <figcaption>완성된 인포그래픽입니다. 식생활·주생활·의생활 세 칸으로 정리됐습니다.</figcaption>
+        </figure>
+        <p>실습에서는 인포그래픽의 용어와 문장 19개를 Claude Code에게 03차시 교과서 본문과 하나씩 맞춰 보게 했습니다. 조·기장 밭농사, 갈판·갈돌, 빗살무늬 토기, 움집, 가락바퀴·뼈바늘이 <b>모두 교과서에 있는 내용</b>이었습니다.</p>
+      </div></li>
+    </ol>
+
+    <div class="story" style="margin-top:1.4rem">
+      <p class="who">실제로 있었던 일 · 결과를 직접 확인한다</p>
+      <p>처음 만든 노트북의 제목이 "신석기 시대<b>와 청동기 시대</b> 사람들의 생활 모습"으로 붙었습니다. 그런데 03차시에는 청동기 내용이 없습니다.</p>
+      <p>원인은 펼침면이었습니다. 교과서 17쪽과 18쪽이 한 장에 붙어 있어 화면에 보이는 반쪽만 잘랐는데, <b>가려진 반쪽의 글자가 파일 안에 그대로 남아</b> AI가 그 글까지 읽은 것입니다. 이 페이지의 예시 파일은 가려진 반쪽을 실제로 지워 고친 것입니다.</p>
+      <p>펼침면이 있는 교과서라면 나눈 뒤에 아래처럼 한 번 더 부탁해 주세요.</p>
+      <div class="prompt">
+        <div class="prompt-top"><span class="prompt-label">고치는 말 · 바꿔 쓰기</span><button class="copy" type="button">복사</button></div>
+<pre>펼침면을 반으로 자른 쪽에 이웃 차시의 글자나 그림이 숨어 남아 있는지 확인하고, 있으면 화면은 그대로 두고 숨은 내용만 지워 줘.</pre>
+      </div>
+    </div>
+
+    <h3>완성 확인</h3>
+    <ul class="check" data-check="l2">
+      <li><label><input type="checkbox" id="l2-1"><span>파일 수가 차시 수와 같은가요? (20개, 연차시를 묶으면 15개)</span></label></li>
+      <li><label><input type="checkbox" id="l2-2"><span>몇 개 파일의 첫 쪽을 열어, 인쇄된 쪽번호와 차시 제목이 표와 같은지 봤나요?</span></label></li>
+      <li><label><input type="checkbox" id="l2-3"><span>원본 교과서 PDF가 그대로 있나요?</span></label></li>
+      <li><label><input type="checkbox" id="l2-4"><span>인포그래픽의 용어가 교과서에 있는 말인가요? 다른 차시 내용이 섞이지 않았나요?</span></label></li>
+    </ul>
+    <p class="check-count" data-count="l2"></p>
+
+    <h3>맡기기 전에 볼 것</h3>
+    <div class="dodont">
+      <div class="dont"><h4>조심할 것</h4><ul>
+        <li>표를 보지 않고 바로 자르게 하기</li>
+        <li>PDF 쪽 번호만 믿고 진도표와 맞추기</li>
+        <li>AI 결과물을 교과서와 대조하지 않고 수업에 쓰기</li>
+      </ul></div>
+      <div class="do"><h4>이렇게</h4><ul>
+        <li>"자르기 전에 표부터 보여 줘"를 꼭 넣기</li>
+        <li>"인쇄된 쪽번호 기준"으로 맞추게 하기</li>
+        <li>교과서에 쓰인 용어만 쓰도록 부탁하고, 결과를 교과서와 대조하기</li>
+      </ul></div>
+    </div>
+
+    <h3>막힐 때</h3>
+    <div class="faq">
+      <details><summary>차시 파일이 한 쪽씩 밀려 있어요</summary><p>표지·차례가 있는 교과서는 PDF 쪽과 인쇄된 쪽이 다릅니다. "PDF 몇 쪽이 교과서 몇 쪽이야"처럼 한 군데를 알려 주고 다시 맞춰 달라고 해 주세요.</p></details>
+      <details><summary>파일 하나가 너무 커요</summary><p>그림이 많은 쪽은 수십 MB가 되기도 합니다(실습의 01차시는 23MB). "메신저로 보낼 수 있게 10MB 이하로 줄여 줘"라고 부탁해 주세요.</p></details>
+      <details><summary>스캔한 교과서라 글자를 못 읽는대요</summary><p>쪽번호를 글자로 읽을 수 없으면 Claude가 쪽을 그림으로 열어 직접 확인합니다. 시간이 더 걸리니 첫 차시가 시작하는 PDF 쪽 번호를 알려 주면 빨라집니다.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 3교시 ============================== -->
+<section class="block" id="lesson3">
+  <div class="wrap">
+    <div class="block-head">
+      <p class="eyebrow">3교시 · Claude Code + 한글 스킬</p>
+      <h2>1학기 계획서로 2학기 운영계획·활동지 만들기</h2>
+      <p class="summary">1학기 운영계획(한글 hwpx) 한 장을 주면, 같은 양식에 2학기 내용을 채운 운영계획 초안과 학생 활동지를 만들어 줍니다. 샘플 활동지를 보여 주면 그 디자인으로 PDF 활동지도 만듭니다.</p>
+    </div>
+
+    <figure class="shot">
+      <img src="img/d3-plan.jpg" alt="2학기 인성교육실천주간 운영계획 초안 2쪽. 목적, 방침, 세부 계획, 일별 활동 표, 기대 효과" loading="lazy" width="1390" height="968">
+      <figcaption>2학기 운영계획 초안을 한글로 연 모습입니다. 1학기 원본과 같은 양식, 같은 2쪽입니다. <a href="examples/plan-draft.hwpx" download="2026학년도 2학기 인성교육실천주간 운영계획(초안).hwpx">예시 파일 받기</a></figcaption>
+    </figure>
+
+    <h3>준비물</h3>
+    <ul class="kit">
+      <li><span>실습 자료(아래에서 내려받기): 1학기 운영계획(hwpx), 샘플 활동지(PDF), 한글 스킬 2개</span></li>
+      <li><span>결과를 열어 볼 한글(HWP) 프로그램. 한글이 설치돼 있으면 Claude가 PDF로 바꿔 쪽 모양까지 확인합니다.</span></li>
+      <li><span>내 계획서로 하실 때는 <b>.hwpx</b> 파일이어야 합니다. .hwp는 한글에서 '다른 이름으로 저장 → HWPX'로 바꿔 주세요.</span></li>
+    </ul>
+
+    <h3>한글 스킬 설치하기</h3>
+    <p>Claude가 한글 파일(hwpx)의 양식을 그대로 살려 고치도록 돕는 스킬 2개를 설치합니다. 처음 한 번만 하면 됩니다.</p>
+    <div class="downloads" style="margin-top:0.8rem">
+      <a class="dl" href="files/skill-hwpx.zip" download="hwpx.zip"><b>hwpx 스킬</b><span>한글 문서 읽기·만들기 · 63KB</span></a>
+      <a class="dl" href="files/skill-hwpx-form-filler.zip" download="hwpx-form-filler.zip"><b>hwpx-form-filler 스킬</b><span>서식에 내용 채우기 · 5KB</span></a>
+    </div>
+    <ol class="steps" style="margin-top:1.2rem">
+      <li><div class="step-body">
+        <p>방법 1 · 앱에서 올리기 (클릭만으로)</p>
+        <p>데스크톱 앱 설정의 <span class="ui">Capabilities</span>에서 '코드 실행 및 파일 생성(Code execution and file creation)'을 켜 주세요. 그다음 왼쪽 메뉴 <span class="ui">Customize</span> → <span class="ui">Skills</span> → <span class="ui">+</span> → <span class="ui">Upload a skill</span>에서 zip 파일을 고르고, 목록에서 스킬을 켜 주세요. 두 파일 모두 같은 방법으로 올립니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>방법 2 · 폴더에 넣기</p>
+        <p>zip 압축을 풀어 나온 <b>hwpx</b>, <b>hwpx-form-filler</b> 폴더를 <span class="ui">C:\Users\(내 이름)\.claude\skills\</span> 안에 넣어 주세요. macOS는 <span class="ui">~/.claude/skills/</span>입니다. 각 폴더 안에 SKILL.md가 바로 보여야 합니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>설치됐는지 확인해 주세요.</p>
+        <p>Code 탭 입력창에 <span class="ui">/skills</span>를 입력하거나, "사용할 수 있는 스킬 알려 줘"라고 물어보면 hwpx 두 개가 보입니다.</p>
+      </div></li>
+    </ol>
+
+    <h3>따라 하기</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>실습 자료를 내려받아 압축을 풀어 주세요.</p>
+        <p>'실습_공문폴더'에 <b>2026학년도 인성교육실천주간 운영계획.hwpx</b>(1학기)와 샘플 활동지 <b>2026.2학기 안전교육주간 활동지.pdf</b>가 있습니다.</p>
+        <div class="downloads"><a class="dl main" href="files/day3-gongmun.zip" download="3교시_공문초안.zip"><b>공문 실습 자료 받기</b><span>압축 파일 · 0.5MB · 계획서 + 샘플 + 스킬</span></a></div>
+      </div></li>
+      <li><div class="step-body">
+        <p>Code 탭에서 '실습_공문폴더'를 고르고, 부탁 문장을 붙여 넣어 주세요.</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">부탁 문장 · 2학기 초안</span><button class="copy" type="button">복사</button></div>
+<pre>이 폴더에는 2026학년도 1학기 인성교육실천주간 운영계획이 있어. 이 파일을 바탕으로 2학기 인성교육실천주간 운영계획과 학생 활동지 초안을 만들어 줘.</pre>
+        </div>
+      </div></li>
+      <li><div class="step-body">
+        <p>Claude가 짚어 준 것을 읽어 주세요.</p>
+        <div class="ask">
+          <p class="who">실습에서 Claude가 짚어 준 것</p>
+          <div class="qa"><p class="q">표·글꼴·번호 상자는 원본 그대로 두고 내용만 바꿨습니다. 주제는 1학기 '배려와 존중'에 이어 "협력과 책임으로 함께 성장하는 우리"로 정했습니다.</p></div>
+          <div class="qa"><p class="q">기간이 정해져 있지 않아 11. 9.(월)~11. 13.(금)으로 임시로 넣었습니다. 학사일정을 알려 주시면 바꾸겠습니다.</p></div>
+          <div class="qa"><p class="q">1학기 원본의 "6. 2.(월) ~ 6. 6.(금)"은 요일이 맞지 않습니다. 6월 2일은 화요일이고, 6월 6일은 토요일(현충일)입니다.</p></div>
+          <div class="qa"><p class="q">끝자리가 빠진 정신건강 위기상담 번호 "1577"은 1577-0199로 채웠습니다. 다른 기관 번호 두 곳은 확인이 필요합니다.</p></div>
+        </div>
+        <p>Claude는 한글로 결과를 열어 PDF로 바꿔 보고, 원본과 같은 2쪽인지, 표의 글자가 단어 중간에서 끊기지 않는지까지 확인한 뒤 고쳤습니다.</p>
+      </div></li>
+      <li><div class="step-body">
+        <p>결과를 열어 확인해 주세요.</p>
+        <figure class="shot">
+          <img src="img/d3-sheet-hwpx.jpg" alt="2학기 인성교육실천주간 학생 활동지 한글 초안 2쪽. 요일별 활동 칸" loading="lazy" width="1390" height="968">
+          <figcaption>운영계획과 같은 디자인으로 만든 학생 활동지(한글) 2쪽입니다. 요일별 활동이 운영계획의 일별 활동과 맞춰져 있습니다. <a href="examples/activity-draft.hwpx" download="2026학년도 2학기 인성교육실천주간 학생활동지(초안).hwpx">예시 파일 받기</a></figcaption>
+        </figure>
+      </div></li>
+    </ol>
+
+    <h3>마음에 안 들면 말로 고쳐요</h3>
+    <ol class="steps">
+      <li><div class="step-body">
+        <p>원하는 활동지 모양이 있다면 샘플을 보여 주세요</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">고치는 말 · 실습에서 쓴 문장</span><button class="copy" type="button">복사</button></div>
+<pre>활동지 샘플을 실습_공문폴더에 넣었어. 샘플 참고해서 학생활동지파일을 pdf로 생성해</pre>
+        </div>
+        <p>Claude는 샘플(안전교육주간 활동지 5쪽)의 머리줄, 요일 배지, 학습 목표 띠, 번호 카드, 표 모양을 그대로 따라 요일별 1쪽씩 5쪽짜리 PDF를 만들었습니다.</p>
+        <figure class="shot">
+          <img src="img/d3-sheet-pdf.jpg" alt="샘플 디자인을 따른 학생 활동지 PDF 5쪽. 1일차부터 5일차까지" loading="lazy" width="1600" height="457">
+          <figcaption>샘플을 참고해 만든 PDF 활동지입니다. 마지막 쪽에는 인성 실천 다짐서가 있습니다. <a href="examples/activity-sheet.pdf" target="_blank" rel="noopener">예시 PDF 열어 보기</a></figcaption>
+        </figure>
+      </div></li>
+      <li><div class="step-body">
+        <p>날짜를 학사일정에 맞추고 싶다면</p>
+        <div class="prompt">
+          <div class="prompt-top"><span class="prompt-label">고치는 말 · 바꿔 쓰기</span><button class="copy" type="button">복사</button></div>
+<pre>실천주간 기간을 11월 16일(월)부터 20일(금)으로 바꿔 줘. 운영계획과 활동지 날짜를 모두 맞춰 줘.</pre>
+        </div>
+      </div></li>
+    </ol>
+
+    <h3>완성 확인</h3>
+    <ul class="check" data-check="l3">
+      <li><label><input type="checkbox" id="l3-1"><span>기간의 날짜와 요일이 학사일정·달력과 맞나요?</span></label></li>
+      <li><label><input type="checkbox" id="l3-2"><span>상담 기관 전화번호를 기관 홈페이지에서 직접 확인했나요?</span></label></li>
+      <li><label><input type="checkbox" id="l3-3"><span>운영계획 초안이 원본과 같은 양식·같은 쪽수인가요?</span></label></li>
+      <li><label><input type="checkbox" id="l3-4"><span>활동지의 날짜와 활동이 운영계획의 일별 활동과 같나요?</span></label></li>
+    </ul>
+    <p class="check-count" data-count="l3"></p>
+
+    <h3>맡기기 전에 볼 것</h3>
+    <div class="dodont">
+      <div class="dont"><h4>조심할 것</h4><ul>
+        <li>초안을 확인 없이 그대로 결재에 올리기</li>
+        <li>원본 계획서에 덮어써 달라고 하기</li>
+        <li>활동지에 학생 개인정보를 넣기</li>
+      </ul></div>
+      <div class="do"><h4>이렇게</h4><ul>
+        <li>날짜·요일은 휴대폰 달력으로 직접 확인하기</li>
+        <li>결과는 '(초안)'을 붙인 새 파일로 받기</li>
+        <li>원본에 있던 오류도 Claude에게 함께 찾아 달라고 하기</li>
+      </ul></div>
+    </div>
+
+    <h3>막힐 때</h3>
+    <div class="faq">
+      <details><summary>계획서가 .hwp 파일이에요</summary><p>Claude는 .hwpx만 양식 그대로 고칠 수 있습니다. 한글에서 파일 → 다른 이름으로 저장 → 파일 형식 'HWPX'로 저장한 뒤 다시 맡겨 주세요.</p></details>
+      <details><summary>스킬이 안 보여요</summary><p>방법 2라면 폴더 위치를 확인해 주세요(skills 폴더 안에 hwpx 폴더, 그 안에 SKILL.md). 새 세션을 열거나 /reload-skills를 입력하면 다시 읽습니다.</p></details>
+      <details><summary>글자가 늘어나 쪽수가 바뀌었어요</summary><p>"원본과 같은 쪽수로, 문장 길이를 원본과 비슷하게 맞춰 줘"라고 부탁해 주세요.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>오늘 가져가는 것</b>: 체험학습 사진 → 학부모 안내 페이지(HTML), 교과서 PDF → 차시별 PDF와 인포그래픽, 1학기 계획서 → 2학기 운영계획·활동지(한글, PDF). 세 가지 모두 '기준 말하기 → 계획 확인 → 결과 확인 → 말로 고치기'로 만들었습니다.</p>
+    <p style="margin-top: 1rem">요금과 기능은 2026년 10월 기준입니다. 메뉴 이름은 화면 언어에 따라 다를 수 있습니다. 공식 도움말:</p>
+    <ul>
+      <li><a href="https://code.claude.com/docs/en/desktop-quickstart" target="_blank" rel="noopener">Claude Code 데스크톱 시작하기</a> · <a href="https://code.claude.com/docs/en/desktop#choose-a-permission-mode" target="_blank" rel="noopener">권한 모드 고르기</a></li>
+      <li><a href="https://support.claude.com/en/articles/12512180-using-skills-in-claude" target="_blank" rel="noopener">Using skills in Claude</a> · <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">Claude Code 스킬</a></li>
+      <li><a href="https://claude.com/pricing" target="_blank" rel="noopener">Plans &amp; Pricing</a></li>
+    </ul>
+    <p style="margin-top: 1rem">1교시 사진과 체험학습 운영계획은 연수용 가상 자료입니다. 2교시 교과서는 아이스크림미디어 5학년 2학기 사회 1단원입니다.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // 부탁 문장 복사
+  document.querySelectorAll(".prompt").forEach(function (card) {
+    var btn = card.querySelector(".copy");
+    var pre = card.querySelector("pre");
+    if (!btn || !pre) return;
+    btn.addEventListener("click", function () {
+      var text = pre.textContent;
+      var done = function () {
+        btn.textContent = "복사됨";
+        btn.classList.add("done");
+        setTimeout(function () { btn.textContent = "복사"; btn.classList.remove("done"); }, 1800);
+      };
+      var fallback = function () {
+        var range = document.createRange();
+        range.selectNodeContents(pre);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        try { document.execCommand("copy") ? done() : (btn.textContent = "길게 눌러 복사"); }
+        catch (e) { btn.textContent = "길게 눌러 복사"; }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+  });
+
+  // 완성 확인 체크 (이 기기에만 저장)
+  function load(key) { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch (e) { return {}; } }
+  function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+  document.querySelectorAll("[data-check]").forEach(function (list) {
+    var key = "teacher-day1-" + list.dataset.check;
+    var state = load(key);
+    var boxes = list.querySelectorAll("input[type=checkbox]");
+    var count = document.querySelector('[data-count="' + list.dataset.check + '"]');
+    function update() {
+      var n = 0;
+      boxes.forEach(function (b) { if (b.checked) n++; });
+      if (count) count.textContent = n === boxes.length ? "모두 확인했습니다." : boxes.length + "개 중 " + n + "개 확인";
+    }
+    boxes.forEach(function (b) {
+      b.checked = !!state[b.id];
+      b.addEventListener("change", function () { state[b.id] = b.checked; save(key, state); update(); });
+    });
+    update();
+  });
+
+  // 지금 보고 있는 교시 표시
+  var links = Array.prototype.slice.call(document.querySelectorAll(".lesson-nav a"));
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (a) { a.setAttribute("aria-current", a.getAttribute("href") === "#" + e.target.id ? "true" : "false"); });
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    sections.forEach(function (s) { if (s) io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>
